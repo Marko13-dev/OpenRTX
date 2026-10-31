@@ -41,8 +41,8 @@ Supported:
 - battery voltage: ADC1 channel 1 (PA1) through a resistive divider
 - GPS: NMEA at 9600 baud on USART3 (PB10 TX, PB11 RX), powered by PA8
   (active low)
-- time/date: the AT32 hardware RTC, using the nominal 40 kHz internal
-  low-speed oscillator (LICK). Manual setting and optional GPS time
+- time/date: the AT32 hardware RTC, using the existing 8 MHz main crystal
+  divided by 128 (62,500 Hz). Manual setting and optional GPS time
   synchronization use the existing OpenRTX settings.
 
 Not supported yet:

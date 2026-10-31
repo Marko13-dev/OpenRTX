@@ -13,7 +13,11 @@
 
 LOG_MODULE_REGISTER(rtc_at32, LOG_LEVEL_INF);
 
-#define RTC_DIVIDER (DT_PROP(DT_NODELABEL(clk_lick), clock_frequency) - 1U)
+#define RTC_CLOCK CRM_RTC_CLOCK_HEXT_DIV
+#define RTC_DIVIDER \
+    (DT_PROP(DT_NODELABEL(clk_hext), clock_frequency) / 128U - 1U)
+_Static_assert(DT_PROP(DT_NODELABEL(clk_hext), clock_frequency) % 128U == 0,
+               "RTC requires an integral HEXT/128 frequency");
 #define RTC_WAIT_MS 1000
 /* Reserve BPR DT42 for the epoch/version marker and DST state. */
 #define RTC_FORMAT 0x5254U
@@ -93,7 +97,7 @@ static volatile uint32_t *backup_register(unsigned int index)
 static void select_clock(void)
 {
     if (CRM->bpdc_bit.rtcsel != CRM_RTC_CLOCK_NOCLK
-        && CRM->bpdc_bit.rtcsel != CRM_RTC_CLOCK_LICK) {
+        && CRM->bpdc_bit.rtcsel != RTC_CLOCK) {
         /* RTCSEL is locked until reset; preserve unrelated backup data. */
         uint16_t saved[42];
         for (unsigned int i = 0; i < 42; i++)
@@ -103,11 +107,11 @@ static void select_clock(void)
         crm_battery_powered_domain_reset(FALSE);
         for (unsigned int i = 0; i < 42; i++)
             *backup_register(i) = saved[i];
-        LOG_WRN("RTC clock source changed to LICK; calendar reinitialized");
+        LOG_WRN("RTC clock changed to HEXT/128; calendar reinitialized");
     }
-    crm_rtc_clock_select(CRM_RTC_CLOCK_LICK);
+    crm_rtc_clock_select(RTC_CLOCK);
     crm_rtc_clock_enable(TRUE);
-    if (CRM->bpdc_bit.rtcsel != CRM_RTC_CLOCK_LICK) {
+    if (CRM->bpdc_bit.rtcsel != RTC_CLOCK) {
         LOG_ERR("RTC clock source could not be selected");
         rtc_panic();
     }
@@ -177,10 +181,9 @@ void rtc_init(void)
     PWC->ctrl_bit.bpwen = 1;
 
     bool retained = (BPR->dt42 & ~RTC_DST) == RTC_FORMAT
-                 && CRM->bpdc_bit.rtcsel == CRM_RTC_CLOCK_LICK
-                 && CRM->bpdc_bit.rtcen;
-    crm_clock_source_enable(CRM_CLOCK_SOURCE_LICK, TRUE);
-    wait_flag(&CRM->ctrlsts, BIT(1));
+                 && CRM->bpdc_bit.rtcsel == RTC_CLOCK && CRM->bpdc_bit.rtcen;
+    crm_clock_source_enable(CRM_CLOCK_SOURCE_HEXT, TRUE);
+    wait_flag(&CRM->ctrl, BIT(17));
     select_clock();
 
     RTC->ctrll_bit.updf = 0;
@@ -202,12 +205,14 @@ void rtc_init(void)
         BPR->dt42 = RTC_FORMAT;
         LOG_WRN("RTC initialized to 2000-01-01 UTC; set date/time or use GPS");
     }
+    LOG_INF("RTC clock: HEXT/128, %u Hz; stops when HEXT is off",
+            (unsigned int)(RTC_DIVIDER + 1U));
     k_mutex_unlock(&rtc_mutex);
 }
 
 void rtc_terminate(void)
 {
-    /* Keep the clock and backup domain intact across resets/power-off. */
+    /* Preserve backup state; counting requires the main crystal running. */
 }
 
 void rtc_setTime(datetime_t time)
