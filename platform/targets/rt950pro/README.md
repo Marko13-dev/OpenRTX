@@ -15,13 +15,15 @@ The hardware description comes from the reverse engineering work done in
 
 ## Hardware
 
-| MCU | Artery AT32F403A, ARM Cortex-M4F |
-| Transceivers | 2x BK4829 |
-| Broadcast RX | SI4732 (FM/AM/SSB) |
-| Display | ST7789V, 240x320 |
-| External SPI Flash | 4MB, contains config, 64 KiB read back |
-| GPS | GPS Module |
-| Bluetooth | HC-05 |
+| Component        | Description                                |
+|------------------|--------------------------------------------|
+| MCU              | Artery AT32F403A, ARM Cortex-M4F           |
+| Transceivers     | 2x BK4829                                  |
+| Broadcast RX     | SI4732 (FM/AM/SSB)                         |
+| Display          | ST7789V, 240x320                           |
+| External Flash   | SPI 4MB, contains config, 64 KiB read back |
+| GPS              | GPS Module                                 |
+| Bluetooth        | HC-05                                      |
 
 ## Status
 
@@ -66,7 +68,7 @@ Requirements:
 
 - Latest OpenRtx zephyr devcontainer which this repo is already based on
 - the Python packages needed by Zephyr 4.3, installed once after the first
-  container start:
+  container start (need to start the build once to download zephyr-artery):
   `uv pip install -r <west topdir>/zephyr-artery/scripts/requirements-base.txt`.
 
 The target is built via `meson` for convenience:
@@ -76,12 +78,20 @@ meson setup build
 meson compile -C build openrtx_rt950pro
 ```
 
-This runs `west update --group-filter +artery` to fetch the Artery Zephyr
-fork, `hal_at32` and `CMSIS_6`, builds the firmware with CMake in
-`build/rt950pro` and produces:
+Meson only runs `west update --group-filter +artery`, to fetch the Artery
+Zephyr fork, `hal_at32` and `CMSIS_6`, and then runs `west build`, which
+invokes CMake to configure and build the firmware.
 
-- `build/openrtx_rt950pro.bin`: raw image, linked at 0x08003000;
-- `build/openrtx_rt950pro.BTF`: image for the vendor bootloader.
+- `build/zephyr/zephyr.bin`: raw image, linked at 0x08003000;
+- `build/openrtx_rt950pro.BTF`: flash image for the vendor bootloader.
+
+
+The firmware can also be built directly with west, without meson:
+```bash
+export ZEPHYR_BASE=<west topdir>/zephyr-artery
+west update --group-filter +csk6
+west build -b rt950pro -d build .
+```
 
 
 ## Flashing
@@ -95,7 +105,11 @@ firmware can be restored at any time with the official update tool.
 2. Turn the radio on while holding both side keys: the bootloader enters the
    update mode.
 3. Connect the programming cable and flash `openrtx_rt950pro.BTF` with the
-   python3 scripts/rt950_flash.py upload /dev/ttyUSB0 build_rt950pro/openrtx_rt950pro.BTF --ptt
+   `rt950_flash.py` script:
+
+```bash
+python3 scripts/rt950_flash.py upload /dev/ttyUSB0 build/openrtx_rt950pro.BTF --ptt
+```
 
 ## Serial logs
 

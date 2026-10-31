@@ -1048,8 +1048,6 @@ west        = find_program('west',                             required:false, d
 uf2conv     = find_program('scripts/uf2conv.py',               required:false, disabler:true)
 dfu_convert = find_program('scripts/dfu-convert.py',           required:false, disabler:true)
 cs7000_wrap = find_program('scripts/cs7000_wrap.py',           required:false, disabler:true)
-rt950_btf   = find_program('scripts/rt950_btf.py',             required:false, disabler:true)
-cmake       = find_program('cmake',                            required:false, disabler:true)
 
 cm4_targets = []
 cm7_targets = []
@@ -1124,9 +1122,8 @@ foreach t : targets
                                     '-b', 'c62',
                                     '-d', '.', '..'])
 
-  # RT-950 Pro is a Zephyr target based on the Artery fork of Zephyr. It is
-  # built with CMake in its own subfolder and packaged in the .BTF format
-  # accepted by the vendor bootloader and update tool.
+  # RT-950 Pro uses the Artery fork of Zephyr. West invokes CMake to build
+  # and package the firmware in its own subfolder.
   elif name == 'openrtx_rt950pro'
       # The Artery Zephyr tree is checked out in the west workspace. Locate
       # it by asking west (honours ZEPHYR_BASE), then by looking for a
@@ -1149,7 +1146,7 @@ foreach t : targets
         endif
       endif
 
-      rt950pro_dir = meson.current_build_dir() / 'rt950pro'
+      rt950pro_dir = meson.current_build_dir()
       rt950pro_env = {
         'ZEPHYR_BASE' : rt950pro_topdir / 'zephyr-artery'
       }
@@ -1162,33 +1159,17 @@ foreach t : targets
                                                   'cd "$0" && west update --group-filter +artery && touch @OUTPUT@',
                                                   rt950pro_topdir])
 
-      rt950pro_cfg = custom_target(name+'_cfg',
-                                   input   : rt950pro_modules,
-                                   output  : name+'_cfg',
-                                   env     : rt950pro_env,
-                                   console : true,
-                                   build_always_stale : true,
-                                   command : [cmake,
-                                              '-G', 'Ninja',
-                                              '-S', meson.project_source_root(),
-                                              '-B', rt950pro_dir,
-                                              '-DBOARD=rt950pro'])
-
-      rt950pro_bin = custom_target(name+'_bin',
-                                   input   : rt950pro_cfg,
-                                   output  : name+'.bin',
-                                   env     : rt950pro_env,
-                                   console : true,
-                                   build_always_stale : true,
-                                   command : ['sh', '-c',
-                                              '"$0" --build "$1" && cp "$1/zephyr/zephyr.bin" "$2"',
-                                              cmake, rt950pro_dir, '@OUTPUT@'])
-
       custom_target(name,
-                    input   : rt950pro_bin,
-                    output  : name+'.BTF',
-                    command : [rt950_btf,
-                               '@INPUT@', '@OUTPUT@'])
+                    input   : rt950pro_modules,
+                    output  : name,
+                    env     : rt950pro_env,
+                    console : true,
+                    build_always_stale : true,
+                    command : [west,
+                               'build',
+                               '-b', 'rt950pro',
+                               '-d', rt950pro_dir,
+                               meson.project_source_root()])
   else
 
     target_opts = t['opts']

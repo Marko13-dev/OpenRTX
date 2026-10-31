@@ -28,6 +28,19 @@ target_sources(app
 # Vendor bootloader model signatures, right after the vector table
 zephyr_linker_sources(ROM_START SORT_KEY 0x3rt950 rt950pro_model_sig.ld)
 
+# Package the raw binary in the .BTF format accepted by the vendor bootloader
+set(RT950PRO_BTF ${CMAKE_BINARY_DIR}/openrtx_rt950pro.BTF)
+
+set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+  COMMAND ${PYTHON_EXECUTABLE} ${OPENRTX_ROOT}/scripts/rt950_btf.py
+          ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.bin
+          ${RT950PRO_BTF}
+)
+
+set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
+  ${RT950PRO_BTF}
+)
+
 target_include_directories(app
   PRIVATE
     ${OPENRTX_ROOT}/platform/targets/rt950pro
