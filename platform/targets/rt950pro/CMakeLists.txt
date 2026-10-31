@@ -10,7 +10,10 @@ cmake_minimum_required(VERSION 3.20.0)
 target_sources(app
   PRIVATE
     ${OPENRTX_ROOT}/platform/mcu/AT32F403A/drivers/delays.c
+    ${OPENRTX_ROOT}/platform/mcu/AT32F403A/drivers/rtc.c
     ${OPENRTX_ROOT}/platform/drivers/GPIO/gpio_at32f403a.c
+    ${OPENRTX_ROOT}/platform/drivers/GPS/nmea_rbuf.c
+    ${OPENRTX_ROOT}/platform/drivers/GPS/gps_zephyr.c
 
     ${OPENRTX_ROOT}/platform/drivers/display/display_rt950pro.c
     ${OPENRTX_ROOT}/platform/drivers/keyboard/keyboard_rt950pro.c
