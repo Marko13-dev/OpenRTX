@@ -112,7 +112,7 @@ jobs:
     timeout-minutes: 45
     env:
       ZEPHYR_SDK_VERSION: 0.16.8
-      ZEPHYR_16_SDK_INSTALL_DIR: ${{ github.workspace }}/zephyr-sdk
+      ZEPHYR_SDK_INSTALL_DIR: ${{ github.workspace }}/zephyr-sdk
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -163,8 +163,8 @@ jobs:
         with:
           name: openrtx-c62
           path: |
-            app/build/zephyr/zephyr.bin
-            app/build/zephyr/dsp_firmware.bin
+            app/build/c62/zephyr/zephyr.bin
+            app/build/c62/zephyr/dsp_firmware.bin
           if-no-files-found: error
   build:
     runs-on: ubuntu-24.04
