@@ -30,7 +30,6 @@ if (${BOARD} STREQUAL "ttwrplus")
     list(APPEND ZEPHYR_EXTRA_MODULES ${WEST_TOPDIR}/modules/hal/espressif)
 elseif (${BOARD} STREQUAL "c62")
     set(ARCH arm)
-    set(Zephyr-sdk_DIR $ENV{ZEPHYR_16_SDK_INSTALL_DIR}/cmake/)
     set(CONF_FILE ${CMAKE_CURRENT_LIST_DIR}/platform/mcu/CSK6011B/zephyr.conf)
 
     list(APPEND ZEPHYR_EXTRA_MODULES ${WEST_TOPDIR}/csk)
@@ -47,12 +46,12 @@ endif()
 #
 execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${CMAKE_CURRENT_LIST_DIR}/platform/targets/${BOARD}
-                ${CMAKE_CURRENT_LIST_DIR}/build/board_root/boards/${ARCH}/${BOARD})
+                ${CMAKE_BINARY_DIR}/board_root/boards/${ARCH}/${BOARD})
 
 #
 # Set the BOARD_ROOT and OPENRTX_ROOT variables
 #
-set(BOARD_ROOT ${CMAKE_CURRENT_LIST_DIR}/build/board_root)
+set(BOARD_ROOT ${CMAKE_BINARY_DIR}/board_root)
 set(OPENRTX_ROOT ${CMAKE_CURRENT_LIST_DIR})
 
 #

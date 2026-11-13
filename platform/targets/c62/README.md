@@ -25,19 +25,23 @@ meson compile -C build openrtx_c62
 ```
 
 The build will automatically run `west update --group-filter +csk6` to fetch
-CSK6-specific Zephyr modules (AF, FreeRTOS shims, LSF, URPC) before compiling.
+CSK6-specific Zephyr modules (AF, FreeRTOS shims, LSF, URPC) before compiling,
+and builds in `build/c62`, so it does not interfere with the meson build files.
+It uses the ListenAI Zephyr fork in `zephyr-listenai`, there is no need to set
+`ZEPHYR_BASE`. The Zephyr SDK is found through `ZEPHYR_SDK_INSTALL_DIR` or its
+default install locations.
 
 Alternatively, using `west` directly:
 
 ```bash
-west build -b c62 -d build .
+ZEPHYR_BASE=<west workspace>/zephyr-listenai west build -b c62 -d build/c62 .
 ```
 
 ### DSP firmware
 
 OpenRTX does not boot without the ListenAI DSP firmware, flashed at
 `0x100000`, and the image must match the audio code. The build pins it by
-hash and places it in `build/zephyr/dsp_firmware.bin`, next to `zephyr.bin`:
+hash and places it in `build/c62/zephyr/dsp_firmware.bin`, next to `zephyr.bin`:
 
 | | |
 |---|---|
@@ -71,6 +75,6 @@ Then write both images in one session:
 
 ```bash
 cskburn -s /dev/ttyUSB0 -C 6 -b 115200 -v --verify-all \
-    0x100000 build/zephyr/dsp_firmware.bin \
-    0x000000 build/zephyr/zephyr.bin
+    0x100000 build/c62/zephyr/dsp_firmware.bin \
+    0x000000 build/c62/zephyr/zephyr.bin
 ```
